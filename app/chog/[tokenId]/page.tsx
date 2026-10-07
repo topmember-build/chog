@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, BookOpen, Flag, Heart, Medal, ShieldAlert, Skull, Sparkles } from 'lucide-react'
 import { EventChip, EmptyState } from '@/components/chog-system'
-import { chogs, type LifeEvent } from '@/lib/chog-data'
+import type { LifeEvent } from '@/lib/chog-data'
+import { getOnchainChog } from '@/lib/chog-server'
 
 const eventDetails: Record<LifeEvent['stamp'], { icon: typeof Flag; className: string; label: string }> = {
   TITLE: { icon: BookOpen, className: 'timeline-purple', label: 'Origin record' },
@@ -22,7 +23,7 @@ function personalityFor(quirk: string) {
 
 export default async function ChogPage({ params }: { params: Promise<{ tokenId: string }> }) {
   const { tokenId } = await params
-  const chog = chogs.find((item) => item.tokenId === tokenId)
+  const chog = await getOnchainChog(tokenId)
 
   if (!chog) {
     return <main className="site-shell route-shell"><Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link><EmptyState message="NO CHOG ON RECORD" /></main>
