@@ -78,6 +78,14 @@ export async function recordLifeEvents(tokenId: string, events: LifeEvent[], adv
   return events
 }
 
+export async function getAdventureTokenId(adventureId: string) {
+  const db = supabaseAdmin()
+  if (!db) return null
+  const { data, error } = await db.from('adventures').select('token_id').eq('id', adventureId).maybeSingle()
+  if (error) throw error
+  return typeof data?.token_id === 'string' ? data.token_id : null
+}
+
 export async function hasPlayedToday(tokenId: string) {
   const db = supabaseAdmin()
   if (!db) return false
