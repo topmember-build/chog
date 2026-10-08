@@ -17,7 +17,7 @@ export async function POST(request: Request) {
       const owner = await chainClient.readContract({ address: contractAddress, abi: ownerAbi, functionName: 'ownerOf', args: [BigInt(body.tokenId)] })
       if (owner.toLowerCase() !== wallet) return NextResponse.json({ error: 'Only the current keeper can play this chapter.' }, { status: 403 })
     }
-    return NextResponse.json(await startAdventure(body.tokenId))
+    return NextResponse.json(await startAdventure(body.tokenId, Boolean(body.demoMode)))
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Adventure unavailable'
     return NextResponse.json({ error: message }, { status: message.includes('not found') ? 404 : 409 })

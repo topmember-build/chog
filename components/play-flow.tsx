@@ -31,7 +31,7 @@ export default function PlayFlow({ tokenId, chog, demoMode = false }: { tokenId:
   async function choose(choiceId: string) {
     if (!adventure) return
     setLoading(true); setError('')
-    try { const response = await fetch('/api/adventure/resolve', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ adventureId: adventure.adventureId, choiceId }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'The outcome could not be recorded.'); setResult(data); setScreen(3) } catch (e) { setError(e instanceof Error ? e.message : 'The outcome could not be recorded.') } finally { setLoading(false) }
+    try { const accessToken = demoMode ? null : await getAccessToken(); const response = await fetch('/api/adventure/resolve', { method: 'POST', headers: { 'content-type': 'application/json', ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ adventureId: adventure.adventureId, choiceId }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'The outcome could not be recorded.'); setResult(data); setScreen(3) } catch (e) { setError(e instanceof Error ? e.message : 'The outcome could not be recorded.') } finally { setLoading(false) }
   }
 
   return <main className="site-shell play-shell">
