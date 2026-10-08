@@ -3,9 +3,11 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { ArrowLeft, Volume2, VolumeX, Zap } from 'lucide-react'
+import { usePrivy } from '@privy-io/react-auth'
 import type { Adventure, Chog, LifeEvent } from '@/lib/chog-data'
 
-export default function PlayFlow({ tokenId, chog }: { tokenId: string; chog: (Chog & { traits?: Record<string, string>; owner?: string }) | null }) {
+export default function PlayFlow({ tokenId, chog, demoMode = false }: { tokenId: string; chog: (Chog & { traits?: Record<string, string>; owner?: string }) | null; demoMode?: boolean }) {
+  const { ready, authenticated, login, getAccessToken } = usePrivy()
   const [screen, setScreen] = useState(0)
   const [beat, setBeat] = useState(0)
   const [adventure, setAdventure] = useState<{ adventureId: string; title: string; beats: string[]; choices: { id: string; label: string }[] } | null>(null)
@@ -17,8 +19,13 @@ export default function PlayFlow({ tokenId, chog }: { tokenId: string; chog: (Ch
   if (!chog) return <main className="site-shell play-shell"><Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link><div className="play-empty"><strong>NO CHOG ON RECORD</strong><span>This adventure has no subject.</span></div></main>
 
   async function begin() {
+    if (!demoMode && !authenticated) { login(); return }
     setLoading(true); setError('')
-    try { const response = await fetch('/api/adventure/start', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ tokenId }) }); const data = await response.json(); if (!response.ok) throw new Error(data.error || 'The archive is unavailable.'); setAdventure(data); setScreen(1) } catch (e) { setError(e instanceof Error ? e.message : 'The archive is unavailable.') } finally { setLoading(false) }
+    try {
+      const accessToken = demoMode ? null : await getAccessToken()
+      const response = await fetch('/api/adventure/start', { method: 'POST', headers: { 'content-type': 'application/json', ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ tokenId, demoMode }) })
+      const data = await response.json(); if (!response.ok) throw new Error(data.error || 'The archive is unavailable.'); setAdventure(data); setScreen(1)
+    } catch (e) { setError(e instanceof Error ? e.message : 'The archive is unavailable.') } finally { setLoading(false) }
   }
 
   async function choose(choiceId: string) {
