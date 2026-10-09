@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowUpRight, BookOpen, Flag, Heart, Medal, ShieldAlert, Sku
 import { EventChip, EmptyState } from '@/components/chog-system'
 import type { LifeEvent } from '@/lib/chog-data'
 import { getOnchainChog } from '@/lib/chog-server'
+import { becauseOfPast, getStreakDetails } from '@/lib/retention-server'
 
 const eventDetails: Record<LifeEvent['stamp'], { icon: typeof Flag; className: string; label: string }> = {
   TITLE: { icon: BookOpen, className: 'timeline-purple', label: 'Origin record' },
@@ -31,6 +32,8 @@ export default async function ChogPage({ params }: { params: Promise<{ tokenId: 
 
   const personality = personalityFor(chog.quirk)
   const dayCount = Math.max(...chog.events.map((event) => Number(event.day.replace(/\D/g, ''))))
+  const streak = await getStreakDetails(tokenId)
+  const pastTag = becauseOfPast(chog.events)
 
   return (
     <main className="site-shell route-shell">
@@ -44,10 +47,10 @@ export default async function ChogPage({ params }: { params: Promise<{ tokenId: 
 
         <section className="file-layout">
           <div className="file-photo"><img src={chog.image} alt={`${chog.name}, Chog file ${chog.tokenId}`} /><span className="mono">IDENTIFICATION PHOTOGRAPH / TAKEN UNDER PROTEST</span></div>
-          <div className="personality-card"><div className="personality-heading"><p className="eyebrow">PERSONALITY CARD</p><Sparkles size={17} /></div><div className="personality-grid"><div><span>TONE</span><strong>{personality.tone}</strong></div><div><span>QUIRK</span><strong>{personality.quirk}</strong></div><div><span>FEAR</span><strong>{personality.fear}</strong></div><div><span>CATCHPHRASE</span><strong>&ldquo;{personality.catchphrase}&rdquo;</strong></div></div><div className="day-count"><span className="mono">LIFE RECORDED</span><strong>DAY {String(dayCount).padStart(3, '0')}</strong></div><button className="primary-button adventure-button" disabled title="Only the owner can play today&apos;s adventure"><span>Play today&apos;s adventure</span><ArrowUpRight size={16} /></button><p className="disabled-note">Only the Chog&apos;s keeper can open today&apos;s chapter.</p><button className="share-button" type="button"><ArrowUpRight size={15} /> Share this Chog&apos;s story</button></div>
+          <div className="personality-card"><div className="personality-heading"><p className="eyebrow">PERSONALITY CARD</p><Sparkles size={17} /></div><div className="streak-badge" aria-label={`${streak.count} day streak`}><span aria-hidden="true">FLAME</span><strong>{streak.count} day{streak.count === 1 ? '' : 's'}</strong>{streak.saved && <span>saved</span>}</div><div className="personality-grid"><div><span>TONE</span><strong>{personality.tone}</strong></div><div><span>QUIRK</span><strong>{personality.quirk}</strong></div><div><span>FEAR</span><strong>{personality.fear}</strong></div><div><span>CATCHPHRASE</span><strong>&ldquo;{personality.catchphrase}&rdquo;</strong></div></div><div className="day-count"><span className="mono">LIFE RECORDED</span><strong>DAY {String(dayCount).padStart(3, '0')}</strong></div><button className="primary-button adventure-button" disabled title="Only the owner can play today&apos;s adventure"><span>Play today&apos;s adventure</span><ArrowUpRight size={16} /></button><p className="disabled-note">Only the Chog&apos;s keeper can open today&apos;s chapter.</p><button className="share-button" type="button"><ArrowUpRight size={15} /> Share this Chog&apos;s story</button></div>
         </section>
 
-        <section className="timeline-section" id="entries"><div className="entries-header"><div><p className="eyebrow">THE LIFE OF {chog.name.toUpperCase()}</p><h2>Chapters <span>({String(chog.events.length).padStart(2, '0')})</span></h2></div><span className="mono">NEWEST FIRST</span></div>
+        <section className="timeline-section" id="entries"><div className="entries-header"><div><p className="eyebrow">THE LIFE OF {chog.name.toUpperCase()}</p><h2>Chapters <span>({String(chog.events.length).padStart(2, '0')})</span></h2></div><span className="mono">{pastTag || 'NEWEST FIRST'}</span></div>
           {chog.events.length === 0 ? <div className="timeline-empty"><BookOpen size={26} /><strong>No chapters yet.</strong><span>The first incident is still being investigated.</span></div> : <div className="timeline">{chog.events.map((event, index) => { const detail = eventDetails[event.stamp]; const Icon = detail.icon; return <article className={`timeline-event ${detail.className}`} style={{ '--delay': `${index * 90}ms` } as React.CSSProperties} key={`${event.day}-${event.text}`}><div className="timeline-marker"><Icon size={17} /></div><div className="timeline-content"><div className="timeline-meta"><span className="mono">{event.day}</span><EventChip color={event.color}>{event.stamp}</EventChip></div><h3>{event.text}</h3><p className="entry-note mono">{detail.label} / SUBJECT DENIES INVOLVEMENT</p></div></article> })}</div>}
         </section>
       </div>

@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { adventures, type Chog, type LifeEvent } from '@/lib/chog-data'
 import { getAdventureTokenId, getLifeEvents, getOnchainChog, hasPlayedToday, recordLifeEvents } from '@/lib/chog-server'
 import { supabaseAdmin } from '@/lib/supabase-admin'
+import { maybeCrossingPath, writeStreak } from '@/lib/retention-server'
 
 const model = process.env.AI_GATEWAY_MODEL || 'openai/gpt-4o-mini'
 const MODEL_TIMEOUT_MS = 12_000
@@ -76,7 +77,8 @@ export async function resolveAdventure(adventureId: string, choiceId: string) {
     const { error } = await db.from('adventures').update({ played_on: new Date().toISOString().slice(0, 10), choice_id: choiceId, outcome: result.outcome }).eq('id', adventureId).eq('token_id', tokenId).is('played_on', null)
     if (error) throw error
     await recordLifeEvents(tokenId, result.events, adventureId)
-    await db.from('streaks').upsert({ token_id: tokenId, count: 1, last_played_on: new Date().toISOString().slice(0, 10) }, { onConflict: 'token_id' })
+    await maybeCrossingPath(tokenId, adventureId)
+    await writeStreak(tokenId)
   }
   return result
 }
