@@ -2,6 +2,7 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Fraunces, Instrument_Sans, JetBrains_Mono } from 'next/font/google'
 import './globals.css'
+import ChogPrivyProvider from '@/components/privy-provider'
 
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-fraunces', display: 'swap' })
 const instrumentSans = Instrument_Sans({ subsets: ['latin'], variable: '--font-instrument', display: 'swap' })
@@ -46,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${fraunces.variable} ${instrumentSans.variable} ${jetBrainsMono.variable} antialiased`}>
-        {children}
+        <ChogPrivyProvider>{children}</ChogPrivyProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
