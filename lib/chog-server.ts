@@ -12,7 +12,7 @@ const metadataCache = new Map<string, Record<string, unknown>>()
 
 function gatewayUri(uri: string) {
   if (!uri.startsWith('ipfs://')) return uri
-  return `https://ipfs.io/ipfs/${uri.slice(7)}`
+  return `https://gateway.pinata.cloud/ipfs/${uri.slice(7)}`
 }
 
 async function fetchMetadata(uri: string) {
