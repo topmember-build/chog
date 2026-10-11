@@ -1,60 +1,87 @@
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, BookOpen, Flag, Heart, Medal, ShieldAlert, Skull, Sparkles } from 'lucide-react'
-import { EventChip, EmptyState } from '@/components/chog-system'
-import type { LifeEvent } from '@/lib/chog-data'
-import { getOnchainChog } from '@/lib/chog-server'
-import { becauseOfPast, getStreakDetails } from '@/lib/retention-server'
+import { ArrowLeft } from 'lucide-react'
+import { EmptyState } from '@/components/chog-system'
+import { IdPhoto } from '@/components/id-photo'
+import { StoryAdventureLoader } from '@/components/story-adventure-loader'
+import { WalletSignIn } from '@/components/wallet-sign-in'
+import { ChogDataError, ChogNotFoundError, getChog } from '@/lib/chog-chain-data'
 
-const eventDetails: Record<LifeEvent['stamp'], { icon: typeof Flag; className: string; label: string }> = {
-  TITLE: { icon: BookOpen, className: 'timeline-purple', label: 'Origin record' },
-  SCAR: { icon: ShieldAlert, className: 'timeline-red', label: 'A scar earned' },
-  FRIEND: { icon: Heart, className: 'timeline-blue', label: 'Ally identified' },
-  RIVAL: { icon: Skull, className: 'timeline-red', label: 'Rival logged' },
-  MILESTONE: { icon: Medal, className: 'timeline-green', label: 'Milestone reached' },
-}
-
-function personalityFor(quirk: string) {
-  return {
-    tone: quirk.includes('paperwork') || quirk.includes('handbook') ? 'Bureaucratic' : 'Suspiciously cheerful',
-    quirk,
-    fear: quirk.includes('vacuum') ? 'Household appliances' : 'Being perceived',
-    catchphrase: quirk.includes('box') ? 'This is my kingdom now.' : 'Subject denies everything.',
-  }
-}
+export const dynamic = 'force-dynamic'
 
 export default async function ChogPage({ params }: { params: Promise<{ tokenId: string }> }) {
   const { tokenId } = await params
-  const chog = await getOnchainChog(tokenId)
+  let chog
 
-  if (!chog) {
-    return <main className="site-shell route-shell"><Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link><EmptyState message="NO CHOG ON RECORD" /></main>
+  try {
+    chog = await getChog(tokenId)
+  } catch (error) {
+    if (error instanceof ChogNotFoundError) {
+      return (
+        <main className="site-shell route-shell">
+          <Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link>
+          <EmptyState message="FILE NOT FOUND" />
+          <p className="route-message">Check the number and try again.</p>
+        </main>
+      )
+    }
+
+    const message = error instanceof ChogDataError
+      ? error.message
+      : 'The file could not be loaded due to an unexpected error.'
+
+    return (
+      <main className="site-shell route-shell">
+        <Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link>
+        <EmptyState message="FILE TEMPORARILY UNAVAILABLE" />
+        <p className="route-message" role="alert">{message}</p>
+        <p className="route-message"><Link href={`/chog/${encodeURIComponent(tokenId)}`}>Try again</Link></p>
+      </main>
+    )
   }
-
-  const personality = personalityFor(chog.quirk)
-  const dayCount = Math.max(...chog.events.map((event) => Number(event.day.replace(/\D/g, ''))))
-  const streak = await getStreakDetails(tokenId)
-  const pastTag = becauseOfPast(chog.events)
 
   return (
     <main className="site-shell route-shell">
-      <header className="route-header"><Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG WORLD ORDER</span></Link><span className="mono">FILE No. {chog.tokenId}</span></header>
+      <header className="route-header">
+        <Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG WORLD ORDER</span></Link>
+        <Link href="/about" className="route-about-link">About the project</Link>
+        <span className="mono">FILE No. {chog.tokenId}</span>
+        <WalletSignIn />
+      </header>
       <div className="route-inner">
         <Link href="/" className="back-link"><ArrowLeft size={16} /> Back to archive</Link>
         <section className="file-header">
-          <div><p className="eyebrow"><span className="registration" />DIVISION OF CHAOS RECORDS / ACTIVE FILE</p><h1>{chog.name}</h1><p className="file-summary">A stranger&apos;s Chog, currently writing its own evidence.</p></div>
-          <span className="stamp stamp-green">{chog.status}</span>
+          <div><p className="eyebrow">DIVISION OF CHAOS RECORDS / LIVE NFT FILE</p><h1>{chog.name}</h1><p className="file-summary">Metadata name from the Chog Genesis NFT on Monad.</p></div>
+          <span className="stamp stamp-green">ON CHAIN</span>
         </section>
-
-        <section className="file-layout">
-          <div className="file-photo"><img src={chog.image} alt={`${chog.name}, Chog file ${chog.tokenId}`} /><span className="mono">IDENTIFICATION PHOTOGRAPH / TAKEN UNDER PROTEST</span></div>
-          <div className="personality-card"><div className="personality-heading"><p className="eyebrow">PERSONALITY CARD</p><Sparkles size={17} /></div><div className="streak-badge" aria-label={`${streak.count} day streak`}><span aria-hidden="true">FLAME</span><strong>{streak.count} day{streak.count === 1 ? '' : 's'}</strong>{streak.saved && <span>saved</span>}</div><div className="personality-grid"><div><span>TONE</span><strong>{personality.tone}</strong></div><div><span>QUIRK</span><strong>{personality.quirk}</strong></div><div><span>FEAR</span><strong>{personality.fear}</strong></div><div><span>CATCHPHRASE</span><strong>&ldquo;{personality.catchphrase}&rdquo;</strong></div></div><div className="day-count"><span className="mono">LIFE RECORDED</span><strong>DAY {String(dayCount).padStart(3, '0')}</strong></div><button className="primary-button adventure-button" disabled title="Only the owner can play today&apos;s adventure"><span>Play today&apos;s adventure</span><ArrowUpRight size={16} /></button><p className="disabled-note">Only the Chog&apos;s keeper can open today&apos;s chapter.</p><button className="share-button" type="button"><ArrowUpRight size={15} /> Share this Chog&apos;s story</button></div>
-        </section>
-
-        <section className="timeline-section" id="entries"><div className="entries-header"><div><p className="eyebrow">THE LIFE OF {chog.name.toUpperCase()}</p><h2>Chapters <span>({String(chog.events.length).padStart(2, '0')})</span></h2></div><span className="mono">{pastTag || 'NEWEST FIRST'}</span></div>
-          {chog.events.length === 0 ? <div className="timeline-empty"><BookOpen size={26} /><strong>No chapters yet.</strong><span>The first incident is still being investigated.</span></div> : <div className="timeline">{chog.events.map((event, index) => { const detail = eventDetails[event.stamp]; const Icon = detail.icon; return <article className={`timeline-event ${detail.className}`} style={{ '--delay': `${index * 90}ms` } as React.CSSProperties} key={`${event.day}-${event.text}`}><div className="timeline-marker"><Icon size={17} /></div><div className="timeline-content"><div className="timeline-meta"><span className="mono">{event.day}</span><EventChip color={event.color}>{event.stamp}</EventChip></div><h3>{event.text}</h3><p className="entry-note mono">{detail.label} / SUBJECT DENIES INVOLVEMENT</p></div></article> })}</div>}
-        </section>
+        <div className="file-layout">
+          <div className="file-photo"><IdPhoto image={chog.image} alt={`${chog.name}, Chog file ${chog.tokenId}`} /><span className="mono">IDENTIFICATION PHOTOGRAPH / TOKEN {chog.tokenId}</span></div>
+          <div className="field-assessment">
+            <p className="eyebrow">ON-CHAIN RECORD</p>
+            <div className="field-row"><span>TOKEN ID</span><strong>{chog.tokenId}</strong></div>
+            <div className="field-row"><span>DISPLAY NAME</span><strong>{chog.name}</strong></div>
+            <div className="field-row"><span>OWNER</span><strong className="owner-address">{chog.owner}</strong></div>
+            <div className="field-row"><span>METADATA TRAITS</span><strong>{chog.traits.length}</strong></div>
+            <p className="file-notice">This file is read from Monad. Daily stories are saved to this Chog&apos;s token file after the current owner is verified.</p>
+          </div>
+        </div>
+        <div className="entries-header" id="traits"><h2>Metadata traits <span>({String(chog.traits.length).padStart(2, '0')})</span></h2><span className="mono">LIVE METADATA</span></div>
+        {chog.traits.length > 0 ? (
+          <div className="trait-list">
+            {chog.traits.map((trait, index) => (
+              <article className="file-entry trait-entry" key={`${trait.trait_type}-${index}`}>
+                <span className="mono">{String(index + 1).padStart(2, '0')}</span>
+                <div><p>{trait.value}</p><span className="mono entry-note">{trait.trait_type}</span></div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <p className="archive-notice">No traits are listed in this token&apos;s metadata.</p>
+        )}
+        <div className="entries-header history-heading"><h2>Life entries</h2><span className="mono">ONE ADVENTURE / DAY / UTC</span></div>
+        <StoryAdventureLoader tokenId={chog.tokenId} appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? null} />
       </div>
-      <div className="mobile-nav"><Link href="/">Archive</Link><a href="#entries">Chapters</a><a href="#entries">Read</a></div>
+      <footer className="route-footer"><Link href="/about">How Chog Chronicles works</Link><span>Built for Chogathon 2026. Fan-made, not official.</span></footer>
+      <div className="mobile-nav"><Link href="/">Archive</Link><a href="#traits">Traits</a><WalletSignIn /></div>
     </main>
   )
 }

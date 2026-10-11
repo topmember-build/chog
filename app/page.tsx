@@ -1,15 +1,81 @@
-import { ChogCard, Header, LedgerStrip, LookupForm, PrimaryButton } from '@/components/chog-system'
-import { PlayWithMyChogButton, WalletExplainer } from '@/components/wallet-controls'
-import { getOnchainChog } from '@/lib/chog-server'
+import { Header, LedgerStrip, LookupForm, PrimaryButton } from '@/components/chog-system'
+import { FeaturedChogs } from '@/components/featured-chogs'
+import { WalletSignIn } from '@/components/wallet-sign-in'
+import { FEATURED_TOKEN_IDS } from '@/lib/chog-constants'
 
-const featuredTokenIds = ['1889', '541', '966']
+export const dynamic = 'force-dynamic'
 
-export default async function Page() {
-  const featured = (await Promise.all(featuredTokenIds.map((tokenId) => getOnchainChog(tokenId)))).filter(Boolean)
-  const lead = featured[0]
+export default function Page() {
+  return (
+    <main className="site-shell">
+      <div className="paper-noise" aria-hidden="true" />
+      <Header />
+      <LedgerStrip />
 
-  return <main className="site-shell"><div className="paper-noise" aria-hidden="true" /><Header /><LedgerStrip chogs={featured} /><section className="hero" id="top"><div className="hero-copy"><p className="eyebrow"><span className="registration" /> DIVISION OF CHAOS RECORDS / EST. 2024</p><h1>Your Chog has a life.<br /><em>Every day adds a chapter.</em></h1><p className="hero-lede">The official record of questionable decisions, unexpected friendships, and incidents your Chog refuses to discuss.</p><div className="hero-actions"><PrimaryButton href="#lookup">Try any Chog</PrimaryButton><PlayWithMyChogButton /></div><p className="hero-note">No sign-in needed to read. Sign in only when you want to add a chapter to a Chog you own.</p><WalletExplainer /></div><div className="hero-dossier">{lead ? <><div className="dossier-tab">CONFIDENTIAL / ACTIVE</div><div className="dossier-card"><div className="dossier-meta"><span>FEATURED FILE</span><span>{lead.tokenId}</span></div><img src={lead.image} alt={`${lead.name}, featured Chog`} width={640} height={440} fetchPriority="high" /><div className="dossier-caption"><div><span className="mono">SUBJECT NAME</span><h2>{lead.name}</h2></div><span className="stamp stamp-green">TITLE HOLDER</span></div><div className="dossier-footer"><span>KNOWN QUIRK: {lead.quirk}</span><span>ACTIVE</span></div></div><div className="margin-note">Handle with care.<br />Or don&apos;t.</div></> : <div className="empty-state"><strong>LIVE FILES TEMPORARILY UNAVAILABLE</strong><span>Monad did not return a featured file. Pull a file by number to try again.</span></div>}</div></section><section className="lookup-section" id="lookup"><div><p className="eyebrow">ARCHIVE ACCESS / 01</p><h2>Find a file.<br /><em>Make it worse.</em></h2><p>Enter an on-chain token number. The name and image come from its live metadata.</p></div><LookupForm tokenIds={featured.map((chog) => chog.tokenId)} /></section><section className="archive" id="archive"><div className="section-heading"><div><p className="eyebrow">THE ARCHIVE / LIVE SUBJECTS</p><h2>Known Chogs</h2></div><span className="archive-mark">MONAD / 143</span></div>{featured.length ? <div className="chog-grid">{featured.map((chog) => <ChogCard key={chog.tokenId} chog={chog} />)}</div> : <div className="empty-state"><strong>NO LIVE FILES ON RECORD</strong><span>Try a token number above. The archive only shows verified Monad data.</span></div>}</section><section className="about" id="about"><p className="eyebrow">HOW IT WORKS / 02</p><h2>The NFT is the soul.</h2><p>Anyone can read a Chog&apos;s public file. Only the wallet that owns the NFT can add today&apos;s entry. If the Chog changes hands, its story stays with the token.</p></section><footer className="site-footer"><span>Built for Chogathon 2026. Fan-made, not official.</span><a href="https://github.com/topmember-build/chog" target="_blank" rel="noreferrer">View the records office</a></footer></main>
+      <section className="hero" id="top">
+        <div className="hero-copy">
+          <p className="eyebrow"><span className="registration" /> DIVISION OF CHAOS RECORDS</p>
+          <h1>Your Chog has a life.<br /><em>Its story should travel with it.</em></h1>
+          <p className="hero-lede">Read a Chog&apos;s real file, then help its current owner write the next chapter. Every story belongs to the Chog—not the person holding it.</p>
+          <div className="hero-actions">
+            <PrimaryButton href="#lookup">Read a Chog&apos;s file</PrimaryButton>
+            <PrimaryButton href="/about" variant="paper">Why Chog Chronicles?</PrimaryButton>
+          </div>
+          <p className="hero-note">Reading is open to everyone. The current owner can add one server-defined story per Chog each UTC day.</p>
+        </div>
+
+        <FeaturedChogs />
+      </section>
+
+      <section className="how-section" id="how-it-works">
+        <div className="how-intro">
+          <p className="eyebrow">THE IDEA / IN PLAIN WORDS</p>
+          <h2>A story that belongs<br /><em>to the Chog.</em></h2>
+          <p>Most stories stay with the person who wrote them. Chog Chronicles keeps each story with its Chog—even if it gets a new owner.</p>
+        </div>
+        <ol className="steps-list">
+          <li>
+            <span className="step-number">01</span>
+            <div><h3>Read any Chog&apos;s file</h3><p>Enter a number to see its real name, picture, and traits. No wallet needed.</p><span className="step-status status-live">LIVE NOW</span></div>
+          </li>
+          <li>
+            <span className="step-number">02</span>
+            <div><h3>The owner plays once a day</h3><p>Privy sign-in and a live Monad owner check confirm that your wallet owns the Chog before a story can be saved.</p><span className="step-status status-live">LIVE NOW</span></div>
+          </li>
+          <li>
+            <span className="step-number">03</span>
+            <div><h3>The story stays with the Chog</h3><p>The choice becomes a dated entry in that Chog&apos;s public file, so a new owner can continue the story.</p><span className="step-status status-live">LIVE NOW</span></div>
+          </li>
+        </ol>
+        <div className="wallet-explainer">
+          <div>
+            <p className="eyebrow">WALLET SIGN-IN / OPTIONAL</p>
+            <h3>What is a wallet for?</h3>
+            <p>Your signed-in wallet lets the server check which Chogs are yours before saving. Signing in is free and does not send a transaction. You never need to sign in just to read.</p>
+            <p className="wallet-build-note">Connect the wallet that owns a Chog to add its daily story.</p>
+          </div>
+          <WalletSignIn />
+        </div>
+      </section>
+
+      <section className="lookup-section" id="lookup">
+        <div>
+          <p className="eyebrow">START HERE / 01</p>
+          <h2>Look up a Chog.<br /><em>See its real file.</em></h2>
+          <p>Use any valid Chog token number to load its file directly. Some token numbers differ from the Chog&apos;s display name, so we show both to keep each file straight.</p>
+        </div>
+        <LookupForm featuredTokenIds={FEATURED_TOKEN_IDS} />
+      </section>
+
+      <footer>
+        <span>Built for Chogathon 2026. Fan-made, not official.</span>
+        <span><a href="/about">About the project</a> / CHOG WORLD ORDER</span>
+      </footer>
+      <div className="mobile-nav">
+        <a href="#lookup">Read a file</a>
+        <a href="#how-it-works">How it works</a>
+        <WalletSignIn />
+      </div>
+    </main>
+  )
 }
-
-export const revalidate = 300
-

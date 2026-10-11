@@ -1,0 +1,26 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Chog development server",
+			"type": "shell",
+			"command": "pnpm",
+			"args": [
+				"dev"
+			],
+			"isBackground": true,
+			"problemMatcher": {
+				"owner": "chog-dev-server",
+				"pattern": {
+					"regexp": "^$"
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "^\\$ next dev$",
+					"endsPattern": "^✓ Ready in "
+				}
+			},
+			"group": "build"
+		}
+	]
+}
