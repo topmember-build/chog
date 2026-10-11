@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     return NextResponse.json(await startAdventure(body.tokenId, Boolean(body.demoMode)))
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Adventure unavailable'
-    return NextResponse.json({ error: message }, { status: message.includes('not found') ? 404 : 409 })
+    const status = message.includes('not found') ? 404 : message.includes('already played') ? 409 : 503
+    const safeMessage = status === 503 ? 'This chapter is taking a little longer to wake up. Please try again.' : message
+    return NextResponse.json({ error: safeMessage }, { status })
   }
 }

@@ -18,6 +18,8 @@ export async function POST(request: Request) {
     return NextResponse.json(await resolveAdventure(body.adventureId, body.choiceId))
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Adventure unavailable'
-    return NextResponse.json({ error: message }, { status: message.includes('already played') ? 409 : 500 })
+    const status = message.includes('not found') ? 404 : message.includes('already played') ? 409 : 503
+    const safeMessage = status === 503 ? 'The chapter could not be recorded yet. Please try again.' : message
+    return NextResponse.json({ error: safeMessage }, { status })
   }
 }
