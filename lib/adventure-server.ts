@@ -7,6 +7,7 @@ import { adventures, type Chog, type LifeEvent } from '@/lib/chog-data'
 import { AdventureAlreadyPlayedError, AdventureChoiceError, AdventureNotFoundError, createPendingAdventure, getAdventure, getLifeEvents, hasPlayedToday, saveAdventureResult } from '@/lib/archive-store'
 import { getOnchainChog } from '@/lib/chog-server'
 import { ChogNotFoundError } from '@/lib/chog-chain-data'
+import { TRIAL_TOKEN_ID } from '@/lib/trial-chog'
 
 const model = process.env.AI_GATEWAY_MODEL || 'openai/gpt-4o-mini'
 const MODEL_TIMEOUT_MS = 12_000
@@ -37,7 +38,10 @@ function fallback(tokenId: string, adventureId: string) {
 }
 
 export async function startAdventure(tokenId: string, demoMode = false) {
-  if (demoMode) return fallback(tokenId, `demo-${BigInt(tokenId)}-${randomUUID()}`)
+  if (demoMode) {
+    if (tokenId !== TRIAL_TOKEN_ID) throw new Error('Trial adventures are only available for the Trial Chog.')
+    return fallback(tokenId, `demo-${TRIAL_TOKEN_ID}-${randomUUID()}`)
+  }
 
   const chog = await getOnchainChog(tokenId)
   if (!chog) throw new ChogNotFoundError()
@@ -59,9 +63,9 @@ export async function startAdventure(tokenId: string, demoMode = false) {
 }
 
 export async function resolveAdventure(adventureId: string, choiceId: string) {
-  const demoMatch = adventureId.match(/^demo-(\d+)-[0-9a-f-]{36}$/i)
+  const demoMatch = adventureId.match(/^demo-0-[0-9a-f-]{36}$/i)
   if (demoMatch) {
-    const tokenId = demoMatch[1]
+    const tokenId = TRIAL_TOKEN_ID
     const adventure = fallback(tokenId, adventureId)
     const choiceIndex = Number(choiceId.match(/^choice-(\d+)$/)?.[1])
     const choice = adventure.choices[choiceIndex]

@@ -3,6 +3,7 @@ import { resolveAdventure } from '@/lib/adventure-server'
 import { getVerifiedWallet } from '@/lib/privy-server'
 import { AdventureAlreadyPlayedError, AdventureChoiceError, getAdventureTokenId } from '@/lib/archive-store'
 import { ChogDataError, ChogNotFoundError, getCurrentChogOwner } from '@/lib/chog-chain-data'
+import { TRIAL_TOKEN_ID } from '@/lib/trial-chog'
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json({ error: 'adventureId and choiceId are required.' }, { status: 400 })
     }
-    const isDemoAdventure = /^demo-\d+-[0-9a-f-]{36}$/i.test(body.adventureId)
+    const isDemoAdventure = new RegExp(`^demo-${TRIAL_TOKEN_ID}-[0-9a-f-]{36}$`, 'i').test(body.adventureId)
     if (!isDemoAdventure) {
       const tokenId = await getAdventureTokenId(body.adventureId)
       if (!tokenId) return NextResponse.json({ error: 'That chapter is no longer available.' }, { status: 404 })

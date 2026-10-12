@@ -1,11 +1,5 @@
-import Link from 'next/link'
-import { Wallet } from 'lucide-react'
+import { WalletControls } from '@/components/wallet-controls'
 
 export function WalletSignIn() {
-  return (
-    <Link className="wallet-button" href="/sign-in">
-      <Wallet size={15} aria-hidden="true" />
-      <span>Sign in with your wallet</span>
-    </Link>
-  )
+  return <WalletControls compact signInLabel="Sign in with your wallet" />
 }

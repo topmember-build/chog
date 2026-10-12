@@ -61,7 +61,7 @@ export default async function ChogPage({ params }: { params: Promise<{ tokenId: 
             <div className="field-row"><span>DISPLAY NAME</span><strong>{chog.name}</strong></div>
             <div className="field-row"><span>OWNER</span><strong className="owner-address">{chog.owner}</strong></div>
             <div className="field-row"><span>METADATA TRAITS</span><strong>{chog.traits.length}</strong></div>
-            <p className="file-notice">This file is read from Monad. Daily stories are saved to this Chog&apos;s token file after the current owner is verified.</p>
+            <p className="file-notice">This file is read from Monad. Daily stories and owner-written chapters are saved to this Chog&apos;s token file after the current owner is verified.</p>
           </div>
         </div>
         <div className="entries-header" id="traits"><h2>Metadata traits <span>({String(chog.traits.length).padStart(2, '0')})</span></h2><span className="mono">LIVE METADATA</span></div>
@@ -77,8 +77,12 @@ export default async function ChogPage({ params }: { params: Promise<{ tokenId: 
         ) : (
           <p className="archive-notice">No traits are listed in this token&apos;s metadata.</p>
         )}
-        <div className="entries-header history-heading"><h2>Life entries</h2><span className="mono">ONE ADVENTURE / DAY / UTC</span></div>
-        <StoryAdventureLoader tokenId={chog.tokenId} appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? null} />
+        <div className="entries-header history-heading"><h2>Life entries</h2><span className="mono">DAILY ADVENTURES + OWNER CHAPTERS</span></div>
+        <StoryAdventureLoader
+          tokenId={chog.tokenId}
+          ownerWallet={chog.owner}
+          appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID ?? null}
+        />
       </div>
       <footer className="route-footer"><Link href="/about">How Chog Chronicles works</Link><span>Built for Chogathon 2026. Fan-made, not official.</span></footer>
       <div className="mobile-nav"><Link href="/">Archive</Link><a href="#traits">Traits</a><WalletSignIn /></div>

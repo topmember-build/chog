@@ -1,6 +1,7 @@
 import { Header, LedgerStrip, LookupForm, PrimaryButton } from '@/components/chog-system'
 import { FeaturedChogs } from '@/components/featured-chogs'
 import { WalletSignIn } from '@/components/wallet-sign-in'
+import { WalletControls } from '@/components/wallet-controls'
 import { FEATURED_TOKEN_IDS } from '@/lib/chog-constants'
 
 export const dynamic = 'force-dynamic'
@@ -20,8 +21,9 @@ export default function Page() {
           <div className="hero-actions">
             <PrimaryButton href="#lookup">Read a Chog&apos;s file</PrimaryButton>
             <PrimaryButton href="/about" variant="paper">Why Chog Chronicles?</PrimaryButton>
+            <PrimaryButton href="/trial" variant="paper">Try the Trial Chog</PrimaryButton>
           </div>
-          <p className="hero-note">Reading is open to everyone. The current owner can add one server-defined story per Chog each UTC day.</p>
+          <p className="hero-note">Read real stories in Explore, or try a separate sandbox that cannot change a real Chog file.</p>
         </div>
 
         <FeaturedChogs />
@@ -40,11 +42,11 @@ export default function Page() {
           </li>
           <li>
             <span className="step-number">02</span>
-            <div><h3>The owner plays once a day</h3><p>Privy sign-in and a live Monad owner check confirm that your wallet owns the Chog before a story can be saved.</p><span className="step-status status-live">LIVE NOW</span></div>
+            <div><h3>The owner writes the next chapter</h3><p>Privy sign-in and a live Monad owner check confirm your wallet before a daily story or original chapter can be saved.</p><span className="step-status status-live">LIVE NOW</span></div>
           </li>
           <li>
             <span className="step-number">03</span>
-            <div><h3>The story stays with the Chog</h3><p>The choice becomes a dated entry in that Chog&apos;s public file, so a new owner can continue the story.</p><span className="step-status status-live">LIVE NOW</span></div>
+            <div><h3>The story stays with the Chog</h3><p>Daily adventures and owner-written chapters appear in the public file and Explore feed, so the next owner can continue.</p><span className="step-status status-live">LIVE NOW</span></div>
           </li>
         </ol>
         <div className="wallet-explainer">
@@ -52,7 +54,7 @@ export default function Page() {
             <p className="eyebrow">WALLET SIGN-IN / OPTIONAL</p>
             <h3>What is a wallet for?</h3>
             <p>Your signed-in wallet lets the server check which Chogs are yours before saving. Signing in is free and does not send a transaction. You never need to sign in just to read.</p>
-            <p className="wallet-build-note">Connect the wallet that owns a Chog to add its daily story.</p>
+            <p className="wallet-build-note">Connect the wallet that owns a Chog to add a daily story or write an original chapter. <a href="/trial">Try the sandbox</a> or <a href="/explore">read real stories</a>.</p>
           </div>
           <WalletSignIn />
         </div>
@@ -73,8 +75,9 @@ export default function Page() {
       </footer>
       <div className="mobile-nav">
         <a href="#lookup">Read a file</a>
-        <a href="#how-it-works">How it works</a>
-        <WalletSignIn />
+        <a href="/explore">Stories</a>
+        <a href="/trial">Trial</a>
+        <WalletControls compact showOwnership />
       </div>
     </main>
   )

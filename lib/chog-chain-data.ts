@@ -14,6 +14,8 @@ const IPFS_GATEWAYS = [
   'https://ipfs.filebase.io/ipfs/',
   'https://ipfs.io/ipfs/',
 ]
+const IPFS_GATEWAY_HOSTS = new Set(IPFS_GATEWAYS.map((gateway) => new URL(gateway).hostname))
+const MAX_METADATA_BYTES = 2 * 1024 * 1024
 
 const collectionAbi = [
   {
@@ -74,18 +76,86 @@ function createMonadClient(rpcUrl: string) {
   return createPublicClient({ chain, transport: http(rpcUrl, { timeout: 12_000 }) })
 }
 
+function normalizeIpfsPath(path: string): string {
+  const normalizedPath = path.replace(/^ipfs\//, '')
+  const segments = normalizedPath.split('/')
+  const cid = segments[0]
+  if (!cid || !/^[A-Za-z0-9]{20,120}$/.test(cid) || segments.length > 32) {
+    throw new ChogDataError('NFT metadata contains an invalid IPFS path.')
+  }
+
+  const safeSegments = segments.map((segment) => {
+    let decoded: string
+    try {
+      decoded = decodeURIComponent(segment)
+    } catch (cause) {
+      throw new ChogDataError('NFT metadata contains an invalid IPFS path.', { cause })
+    }
+    if (!decoded || decoded === '.' || decoded === '..' || /[/\\\0]/.test(decoded)) {
+      throw new ChogDataError('NFT metadata contains an invalid IPFS path.')
+    }
+    return encodeURIComponent(decoded)
+  })
+
+  const safePath = safeSegments.join('/')
+  if (safePath.length > 2048) throw new ChogDataError('NFT metadata path is too long.')
+  return safePath
+}
+
 function resolveUri(uri: string): string {
   if (uri.startsWith('ipfs://')) {
-    return `${IPFS_GATEWAYS[0]}${uri.slice('ipfs://'.length).replace(/^ipfs\//, '')}`
+    return `${IPFS_GATEWAYS[0]}${normalizeIpfsPath(uri.slice('ipfs://'.length))}`
   }
-  if (uri.startsWith('http://') || uri.startsWith('https://')) {
-    const parsed = new URL(uri)
-    if (parsed.username || parsed.password) {
-      throw new ChogDataError('NFT metadata contains an invalid URL.')
+  if (uri.startsWith('https://')) {
+    let parsed: URL
+    try {
+      parsed = new URL(uri)
+    } catch (cause) {
+      throw new ChogDataError('NFT metadata contains an invalid URL.', { cause })
     }
-    return parsed.toString()
+    if (
+      parsed.username ||
+      parsed.password ||
+      (parsed.port !== '' && parsed.port !== '443') ||
+      parsed.search ||
+      parsed.hash ||
+      !IPFS_GATEWAY_HOSTS.has(parsed.hostname.toLowerCase()) ||
+      !parsed.pathname.startsWith('/ipfs/')
+    ) {
+      throw new ChogDataError('NFT metadata URL must use a supported HTTPS IPFS gateway.')
+    }
+    return `https://${parsed.hostname.toLowerCase()}/ipfs/${normalizeIpfsPath(parsed.pathname.slice('/ipfs/'.length))}`
   }
   throw new ChogDataError('NFT metadata uses an unsupported URI format.')
+}
+
+async function readMetadataBody(response: Response): Promise<string> {
+  const contentLength = Number(response.headers.get('content-length'))
+  if (Number.isFinite(contentLength) && contentLength > MAX_METADATA_BYTES) {
+    throw new ChogDataError('NFT metadata exceeds the 2 MB size limit.')
+  }
+
+  if (!response.body) return ''
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let size = 0
+  let body = ''
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      size += value.byteLength
+      if (size > MAX_METADATA_BYTES) {
+        await reader.cancel()
+        throw new ChogDataError('NFT metadata exceeds the 2 MB size limit.')
+      }
+      body += decoder.decode(value, { stream: true })
+    }
+    return body + decoder.decode()
+  } finally {
+    reader.releaseLock()
+  }
 }
 
 function parseMetadata(uri: string, body: string): Record<string, unknown> {
@@ -207,12 +277,13 @@ const getCachedChog = unstable_cache(
             const response = await fetch(metadataUrl, {
               next: { revalidate: 3600 },
               signal: AbortSignal.timeout(12_000),
+              redirect: 'error',
             })
             if (!response.ok) {
               metadataError = new Error(`Metadata gateway responded with ${response.status}.`)
               continue
             }
-            metadata = parseMetadata(tokenUri, await response.text())
+            metadata = parseMetadata(tokenUri, await readMetadataBody(response))
             metadataError = undefined
             break
           } catch (cause) {

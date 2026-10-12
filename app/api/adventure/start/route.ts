@@ -3,6 +3,7 @@ import { startAdventure } from '@/lib/adventure-server'
 import { getVerifiedWallet } from '@/lib/privy-server'
 import { ChogDataError, ChogNotFoundError, getCurrentChogOwner, normalizeChogTokenId } from '@/lib/chog-chain-data'
 import { AdventureAlreadyPlayedError } from '@/lib/archive-store'
+import { TRIAL_TOKEN_ID } from '@/lib/trial-chog'
 
 export async function POST(request: Request) {
   try {
@@ -21,6 +22,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: 'demoMode must be a boolean.' }, { status: 400 })
       }
       demoMode = body.demoMode
+    }
+    if (demoMode && body.tokenId !== TRIAL_TOKEN_ID) {
+      return NextResponse.json({ error: 'Trial adventures are only available for the Trial Chog.', code: 'INVALID_TRIAL_SUBJECT' }, { status: 400 })
     }
     const tokenId = normalizeChogTokenId(body.tokenId)
     if (!demoMode) {

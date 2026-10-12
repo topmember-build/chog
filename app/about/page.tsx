@@ -5,7 +5,7 @@ import { Header, PrimaryButton } from '@/components/chog-system'
 
 export const metadata: Metadata = {
   title: 'About Chog Chronicles',
-  description: 'What Chog Chronicles is, why stories belong to Chogs, and how live NFT files and owner-verified daily stories work.',
+  description: 'What Chog Chronicles is, why stories belong to Chogs, and how live NFT files and owner-verified stories work.',
 }
 
 const principles = [
@@ -16,8 +16,8 @@ const principles = [
   },
   {
     icon: BookOpen,
-    title: 'A little story, one day at a time',
-    text: 'The daily adventure is short: read a few lines, make one choice, and see what gets added to the file. It is meant to be a small daily ritual, not a long game to learn.',
+    title: 'A story written one chapter at a time',
+    text: 'Play the daily adventure or write an original chapter. Every new chapter is appended to the Chog’s file and older chapters stay unchanged.',
   },
   {
     icon: Repeat2,
@@ -35,17 +35,17 @@ const roadmap = [
   {
     status: 'LIVE',
     title: 'Prove ownership before adding a story',
-    text: 'The server verifies Privy sign-in and checks its linked Ethereum wallet against the token’s current owner on Monad before saving. A wallet address typed into a page is never enough proof.',
+    text: 'The server verifies Privy sign-in and checks its linked Ethereum wallet against the token’s current owner on Monad before saving a daily story or custom chapter. A wallet address typed into a page is never enough proof.',
   },
   {
     status: 'LIVE',
-    title: 'Play, save, and revisit',
-    text: 'The current owner can choose one server-defined outcome per Chog per UTC day. The result is saved in PostgreSQL under the token ID and shown in that Chog’s public story file. Streaks and trial play are not implemented.',
+    title: 'Write, save, and revisit',
+    text: 'The current owner can add original chapters at any time and choose one server-defined daily adventure outcome per Chog per UTC day. Chapters are appended, never edited, and all stories are shown in the public token file.',
   },
   {
-    status: 'PLANNED',
-    title: 'Explore and try a clearly marked trial',
-    text: 'A public feed will show real stories, while a separate Trial Chog will let people try the experience without changing a real Chog’s file.',
+    status: 'LIVE',
+    title: 'Explore real stories and try a Trial Chog',
+    text: 'Explore shows saved stories from real Chog files. The separate Trial Chog is an isolated, temporary sandbox and cannot change real files or appear in the public feed.',
   },
 ]
 
@@ -60,15 +60,15 @@ const questions = [
   },
   {
     question: 'Do I need a wallet to read a file?',
-    answer: 'No. File lookup and saved stories are public. A wallet is required only to add a daily story, and the server checks its current on-chain ownership.',
+    answer: 'No. File lookup and saved stories are public. A wallet is required to add a daily story or write an original chapter, and the server checks its current on-chain ownership.',
   },
   {
     question: 'Does signing in send a transaction?',
-    answer: 'No. Signing in is an identity step; it does not write to the blockchain. Reading NFT details and saving a daily story do not require a transaction.',
+    answer: 'No. Signing in is an identity step; it does not write to the blockchain. Reading NFT details and saving a story or chapter do not require a transaction.',
   },
   {
     question: 'Are stories saved?',
-    answer: 'Yes. The owner’s choice is saved as a token-keyed PostgreSQL entry, limited to one per UTC day, and stays with that Chog if its owner changes. The server resolves the story outcome and verifies current ownership before saving.',
+    answer: 'Yes. Daily adventure entries and original owner-written chapters are saved under the token ID and stay with that Chog if its owner changes. Only the daily adventure is limited to one entry per UTC day; custom chapters are append-only. Trial Chog practice is temporary and is not saved or listed in Explore.',
   },
 ]
 
@@ -83,8 +83,8 @@ export default function AboutPage() {
         <section className="about-hero">
           <p className="eyebrow"><span className="registration" /> THE IDEA / A FILE THAT FOLLOWS ITS CHOG</p>
           <h1>Your Chog has a life.<br /><em>Its story should travel with it.</em></h1>
-          <p className="about-lede">Chog Chronicles is a daily story game for Chog holders. Each Chog gets a file of its own. The current owner plays a tiny adventure, makes one choice, and the result becomes part of that Chog’s story.</p>
-          <p className="about-caveat"><strong>What works today:</strong> live Chog NFT file lookup, owner-verified daily adventures, and public token-keyed story files.</p>
+          <p className="about-lede">Chog Chronicles gives every Chog a story file of its own. Its current owner can play the daily adventure or write an original chapter, and the story stays with that Chog.</p>
+          <p className="about-caveat"><strong>What works today:</strong> live Chog NFT file lookup, owner verification on Monad, daily adventures, and owner-written chapters in public token-keyed story files.</p>
         </section>
 
         <section className="about-principles">
@@ -116,10 +116,10 @@ export default function AboutPage() {
           <ol className="about-loop-list">
             <li><span>01</span><div><h3>Open the file</h3><p>Look at the Chog’s name, traits, and the chapters already recorded.</p></div></li>
             <li><span>02</span><div><h3>Play today’s adventure</h3><p>The owner reads a short, playful situation and chooses what the Chog does.</p></div></li>
-            <li><span>03</span><div><h3>Add a chapter</h3><p>The choice gets turned into a short entry in that token’s file. Come back tomorrow for the next one.</p></div></li>
+            <li><span>03</span><div><h3>Add a chapter</h3><p>Choose a daily adventure or write an original chapter. Owner-written chapters are appended to that token’s file and can’t be edited afterward.</p></div></li>
             <li><span>04</span><div><h3>Pass the story forward</h3><p>If the token gets a new owner, the new owner can read the same file and continue from there.</p></div></li>
           </ol>
-          <p className="about-caveat">A Chog can receive one entry per UTC day. The owner check and story save happen on the server.</p>
+          <p className="about-caveat">The daily adventure is limited to one entry per UTC day; owner-written chapters can be added at any time. The owner check and saves happen on the server.</p>
         </section>
 
         <section className="about-status">

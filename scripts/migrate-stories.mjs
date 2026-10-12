@@ -1,10 +1,12 @@
 import { readdir, readFile } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { resolve } from 'node:path'
-import nextEnv from '@next/env'
 import postgres from 'postgres'
 
-const { loadEnvConfig } = nextEnv
-loadEnvConfig(process.cwd())
+for (const envFile of ['.env.local', '.env']) {
+  const envPath = resolve(process.cwd(), envFile)
+  if (existsSync(envPath)) process.loadEnvFile(envPath)
+}
 
 const databaseUrl = process.env.POSTGRES_URL
 if (!databaseUrl) {
