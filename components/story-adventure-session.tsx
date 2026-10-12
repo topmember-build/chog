@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { BookOpen, LockKeyhole } from 'lucide-react'
-import { useIdentityToken, useLogin, usePrivy } from '@privy-io/react-auth'
-import { PrivySessionProvider } from '@/components/privy-wallet-session'
+import { useIdentityToken, useLinkAccount, useLogin, usePrivy } from '@privy-io/react-auth'
 
 type AdventureChoice = { id: string; label: string }
 type StoryEntry = {
@@ -21,6 +20,12 @@ type AdventureResponse = {
   todayEntry: StoryEntry | null
   entries: StoryEntry[]
 }
+type OwnershipStatus =
+  | { state: 'checking' }
+  | { state: 'verified'; ownerWallet: string }
+  | { state: 'wallet-required' }
+  | { state: 'not-owner' }
+  | { state: 'error'; message: string }
 
 function StoryBoard({ tokenId }: { tokenId: string }) {
   const [data, setData] = useState<AdventureResponse | null>(null)
@@ -29,12 +34,28 @@ function StoryBoard({ tokenId }: { tokenId: string }) {
   const [actionError, setActionError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
-  const { ready, authenticated, error: privyError, getAccessToken } = usePrivy()
+  const [ownership, setOwnership] = useState<OwnershipStatus | null>(null)
+  const [ownershipCheckAttempt, setOwnershipCheckAttempt] = useState(0)
+  const { ready, authenticated, user, error: privyError, getAccessToken } = usePrivy()
   const { login } = useLogin({
     onComplete: () => setActionError(null),
     onError: (errorCode) => {
+      if (errorCode === 'exited_auth_flow') {
+        setActionError(null)
+        return
+      }
       console.error('Privy wallet login failed.', errorCode)
       setActionError(`Wallet sign-in failed (Privy error: ${errorCode}). Close the wallet prompt and try again. If it keeps failing, share this error code.`)
+    },
+  })
+  const { linkWallet } = useLinkAccount({
+    onSuccess: () => {
+      setOwnership({ state: 'checking' })
+      setOwnershipCheckAttempt((attempt) => attempt + 1)
+    },
+    onError: (errorCode) => {
+      if (errorCode === 'exited_auth_flow') return
+      setOwnership({ state: 'error', message: `Could not link wallet (Privy error: ${errorCode}).` })
     },
   })
   const { identityToken } = useIdentityToken()
@@ -55,6 +76,72 @@ function StoryBoard({ tokenId }: { tokenId: string }) {
   useEffect(() => {
     void refresh()
   }, [refresh])
+
+  useEffect(() => {
+    if (!ready || !authenticated) {
+      setOwnership(null)
+      return
+    }
+    if (!identityToken) {
+      setOwnership({ state: 'checking' })
+      return
+    }
+
+    let active = true
+    setOwnership({ state: 'checking' })
+
+    async function verifyOwnership() {
+      try {
+        const accessToken = await getAccessToken()
+        if (!accessToken) {
+          if (active) setOwnership({ state: 'error', message: 'Privy could not provide a sign-in token. Sign in again and retry.' })
+          return
+        }
+
+        const response = await fetch(`/api/chog/${encodeURIComponent(tokenId)}/ownership`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ identityToken }),
+          cache: 'no-store',
+        })
+        const payload = await response.json() as {
+          verified?: boolean
+          ownerWallet?: string
+          code?: string
+          error?: string
+        }
+        if (!active) return
+
+        if (response.ok && payload.verified && payload.ownerWallet) {
+          setOwnership({ state: 'verified', ownerWallet: payload.ownerWallet })
+        } else if (payload.code === 'WALLET_REQUIRED') {
+          setOwnership({ state: 'wallet-required' })
+        } else if (payload.code === 'NOT_CURRENT_OWNER') {
+          setOwnership({ state: 'not-owner' })
+        } else {
+          setOwnership({
+            state: 'error',
+            message: payload.error ?? 'Ownership could not be verified. Please retry.',
+          })
+        }
+      } catch (error) {
+        if (active) {
+          setOwnership({
+            state: 'error',
+            message: error instanceof Error ? error.message : 'Ownership could not be verified. Please retry.',
+          })
+        }
+      }
+    }
+
+    void verifyOwnership()
+    return () => {
+      active = false
+    }
+  }, [authenticated, getAccessToken, identityToken, ownershipCheckAttempt, ready, tokenId, user])
 
   async function playChoice(choice: AdventureChoice) {
     setPendingChoice(choice.id)
@@ -81,12 +168,17 @@ function StoryBoard({ tokenId }: { tokenId: string }) {
           choiceId: choice.id,
         }),
       })
-      const payload = await response.json() as { entry?: StoryEntry; error?: string }
+      const payload = await response.json() as { entry?: StoryEntry; error?: string; code?: string }
       if (!response.ok) {
         if (response.status === 409) {
           setNotice(payload.error ?? 'This Chog has already played today.')
           await refresh()
           return
+        }
+        if (payload.code === 'NOT_CURRENT_OWNER') {
+          setOwnership({ state: 'not-owner' })
+        } else if (payload.code === 'WALLET_REQUIRED') {
+          setOwnership({ state: 'wallet-required' })
         }
         throw new Error(payload.error ?? 'The story could not be saved.')
       }
@@ -134,9 +226,9 @@ function StoryBoard({ tokenId }: { tokenId: string }) {
             </article>
           ) : (
             <div className="adventure-play">
-              {authenticated ? (
+              {authenticated && ownership?.state === 'verified' ? (
                 <>
-                  <p className="story-ownership-note"><LockKeyhole size={14} aria-hidden="true" /> The server will confirm you own this Chog before saving.</p>
+                  <p className="story-ownership-note"><LockKeyhole size={14} aria-hidden="true" /> Owner wallet {`${ownership.ownerWallet.slice(0, 6)}…${ownership.ownerWallet.slice(-4)}`} verified on Monad. The server checks again before saving.</p>
                   <div className="adventure-choices">
                     {data.adventure.choices.map((choice) => (
                       <button
@@ -151,6 +243,36 @@ function StoryBoard({ tokenId }: { tokenId: string }) {
                     ))}
                   </div>
                 </>
+              ) : authenticated ? (
+                <div className="story-sign-in">
+                  {(!ownership || ownership.state === 'checking') && <p role="status">Checking your linked wallets against the current Monad owner…</p>}
+                  {ownership?.state === 'wallet-required' && (
+                    <>
+                      <p>This account has no linked wallet yet. Link the wallet that owns this Chog to prove ownership.</p>
+                      <button className="primary-button" type="button" onClick={() => linkWallet()}>
+                        <LockKeyhole size={15} aria-hidden="true" />
+                        Link owner wallet
+                      </button>
+                    </>
+                  )}
+                  {ownership?.state === 'not-owner' && (
+                    <>
+                      <p>This account’s linked wallets do not currently own this Chog. Link the owner wallet, then the server will verify it on Monad.</p>
+                      <button className="primary-button" type="button" onClick={() => linkWallet()}>
+                        <LockKeyhole size={15} aria-hidden="true" />
+                        Link another wallet
+                      </button>
+                    </>
+                  )}
+                  {ownership?.state === 'error' && (
+                    <>
+                      <p className="story-error" role="alert">{ownership.message}</p>
+                      <button className="story-text-button" type="button" onClick={() => setOwnershipCheckAttempt((attempt) => attempt + 1)}>
+                        Check ownership again
+                      </button>
+                    </>
+                  )}
+                </div>
               ) : (
                 <div className="story-sign-in">
                   <p>Sign in with the wallet that currently owns this Chog to make a choice.</p>
@@ -246,9 +368,5 @@ export function StoryAdventureSession({
     )
   }
 
-  return (
-    <PrivySessionProvider appId={appId}>
-      <StoryBoard tokenId={tokenId} />
-    </PrivySessionProvider>
-  )
+  return <StoryBoard tokenId={tokenId} />
 }

@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
-import { PrivyProvider, useLogin, usePrivy } from '@privy-io/react-auth'
+import { useState } from 'react'
+import { useLogin, usePrivy } from '@privy-io/react-auth'
 import { Wallet } from 'lucide-react'
-import { monad } from 'viem/chains'
 
 function shortenAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`
@@ -15,6 +14,10 @@ function WalletSessionControls() {
   const { login } = useLogin({
     onComplete: () => setActionError(null),
     onError: (errorCode) => {
+      if (errorCode === 'exited_auth_flow') {
+        setActionError(null)
+        return
+      }
       console.error('Privy wallet login failed.', errorCode)
       setActionError(`Wallet sign-in failed (Privy error: ${errorCode}). Close the wallet prompt and try again. If it keeps failing, share this error code.`)
     },
@@ -78,33 +81,6 @@ function WalletSessionControls() {
   )
 }
 
-export function PrivySessionProvider({ appId, children }: { appId: string; children: ReactNode }) {
-  return (
-    <PrivyProvider
-      appId={appId}
-      config={{
-        appearance: {
-          theme: 'light',
-          accentColor: '#836EF9',
-          landingHeader: 'Sign in with your wallet',
-          loginMessage: 'You may be asked to sign a message. Signing in does not send a transaction or spend gas.',
-          showWalletLoginFirst: true,
-          walletChainType: 'ethereum-only',
-        },
-        loginMethods: ['wallet'],
-        supportedChains: [monad],
-        defaultChain: monad,
-      }}
-    >
-      {children}
-    </PrivyProvider>
-  )
-}
-
-export function PrivyWalletSession({ appId }: { appId: string }) {
-  return (
-    <PrivySessionProvider appId={appId}>
-      <WalletSessionControls />
-    </PrivySessionProvider>
-  )
+export function PrivyWalletSession() {
+  return <WalletSessionControls />
 }

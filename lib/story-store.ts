@@ -29,7 +29,7 @@ declare global {
   var chogStoryDatabase: ReturnType<typeof postgres> | undefined
 }
 
-function getDatabase(): ReturnType<typeof postgres> {
+export function getDatabase(): ReturnType<typeof postgres> {
   const databaseUrl = process.env.POSTGRES_URL
   if (!databaseUrl) throw new Error('POSTGRES_URL is required for story storage.')
 

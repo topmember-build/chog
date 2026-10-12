@@ -69,7 +69,7 @@ export default function Page() {
 
       <footer>
         <span>Built for Chogathon 2026. Fan-made, not official.</span>
-        <span><a href="/about">About the project</a> / CHOG WORLD ORDER</span>
+        <span><a href="/about">About the project</a> / CHOG CHRONICLES</span>
       </footer>
       <div className="mobile-nav">
         <a href="#lookup">Read a file</a>

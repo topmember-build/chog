@@ -1,7 +1,7 @@
 export const lore = {
   greeting: 'gchog',
   mascot: 'Mascot of Monad',
-  community: 'Chog World Order',
+  community: 'Chog Chronicles',
   species: 'monanimal',
   division: 'Division of Chaos Records',
   tone: 'Funny, chaotic, affectionate, and safe for all ages. Mischief stays harmless.',

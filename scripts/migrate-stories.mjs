@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises'
+import { readdir, readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import nextEnv from '@next/env'
 import postgres from 'postgres'
@@ -11,10 +11,15 @@ if (!databaseUrl) {
   throw new Error('POSTGRES_URL is required to migrate the story database.')
 }
 
-const migration = await readFile(
-  resolve(process.cwd(), 'db/migrations/001_story_entries.sql'),
-  'utf8',
-)
+const migrationsDirectory = resolve(process.cwd(), 'db/migrations')
+const migrations = (await readdir(migrationsDirectory))
+  .filter((file) => /^\d+.*\.sql$/.test(file))
+  .sort()
+
+if (migrations.length === 0) {
+  throw new Error('No database migrations were found.')
+}
+
 const sql = postgres(databaseUrl, {
   max: 1,
   prepare: false,
@@ -22,8 +27,11 @@ const sql = postgres(databaseUrl, {
 })
 
 try {
-  await sql.unsafe(migration)
-  console.log('Story entries table is ready.')
+  for (const migrationFile of migrations) {
+    const migration = await readFile(resolve(migrationsDirectory, migrationFile), 'utf8')
+    await sql.unsafe(migration)
+    console.log(`Database migration ready: ${migrationFile}`)
+  }
 } finally {
   await sql.end({ timeout: 5 })
 }

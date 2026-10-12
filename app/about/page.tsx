@@ -166,7 +166,7 @@ export default function AboutPage() {
           <Link href="/#how-it-works" className="about-secondary-link">Back to the short explanation <ArrowRight size={15} aria-hidden="true" /></Link>
         </section>
       </div>
-      <footer className="about-footer"><span>Built for Chogathon 2026. Fan-made, not official.</span><Link href="/">CHOG WORLD ORDER / DIVISION OF CHAOS RECORDS</Link></footer>
+      <footer className="about-footer"><span>Built for Chogathon 2026. Fan-made, not official.</span><Link href="/">CHOG CHRONICLES / DIVISION OF CHAOS RECORDS</Link></footer>
     </main>
   )
 }

@@ -3,9 +3,9 @@
 import { useState, type ComponentType } from 'react'
 import { Wallet } from 'lucide-react'
 
-type PrivySession = ComponentType<{ appId: string }>
+type PrivySession = ComponentType
 
-export function PrivySignInLoader({ appId }: { appId: string }) {
+export function PrivySignInLoader() {
   const [Session, setSession] = useState<PrivySession | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -23,7 +23,7 @@ export function PrivySignInLoader({ appId }: { appId: string }) {
     }
   }
 
-  if (Session) return <Session appId={appId} />
+  if (Session) return <Session />
 
   return (
     <>

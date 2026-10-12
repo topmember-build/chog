@@ -9,8 +9,8 @@ const instrumentSans = Instrument_Sans({ subsets: ['latin'], variable: '--font-i
 const jetBrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono', display: 'swap' })
 
 export const metadata: Metadata = {
-  title: 'Chog World Order — Division of Chaos Records',
-  description: 'The official file system of Chog. Open a dossier, review the evidence, and file today\'s incident.',
+  title: 'Chog Chronicles — Division of Chaos Records',
+  description: 'Chog Chronicles is the official file system of Chog. Open a dossier, review the evidence, and file today\'s incident.',
   generator: 'v0.app',
   icons: {
     icon: [

@@ -14,7 +14,7 @@ export default function SignInPage() {
   return (
     <main className="site-shell route-shell">
       <header className="route-header">
-        <Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG WORLD ORDER</span></Link>
+        <Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG CHRONICLES</span></Link>
         <span className="mono">WALLET SIGN-IN</span>
       </header>
       <section className="sign-in-panel">
@@ -23,7 +23,7 @@ export default function SignInPage() {
         <h1>Sign in with<br /><em>your wallet.</em></h1>
         <p>Signing in proves which wallet is yours. Your wallet may ask you to sign a message; this sends no blockchain transaction and spends no gas. You never need to sign in to read a Chog&apos;s public file.</p>
         {appId
-          ? <PrivySignInLoader appId={appId} />
+          ? <PrivySignInLoader />
           : <p className="archive-notice" role="alert">Wallet sign-in is not configured. Set NEXT_PUBLIC_PRIVY_APP_ID and restart the app.</p>}
         <p className="sign-in-notice">To add a story, the server checks that your authenticated wallet currently owns the Chog. Public file lookup does not require sign-in.</p>
       </section>

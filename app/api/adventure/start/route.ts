@@ -1,27 +1,40 @@
 import { NextResponse } from 'next/server'
 import { startAdventure } from '@/lib/adventure-server'
 import { getVerifiedWallet } from '@/lib/privy-server'
-import { createPublicClient, http } from 'viem'
-import { contractAddress } from '@/lib/chog-server'
-
-const chainClient = createPublicClient({ transport: http(process.env.CHAIN_RPC_URL || 'https://rpc.monad.xyz') })
-const ownerAbi = [{ type: 'function', name: 'ownerOf', stateMutability: 'view', inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ type: 'address' }] }] as const
+import { ChogDataError, ChogNotFoundError, getCurrentChogOwner, normalizeChogTokenId } from '@/lib/chog-chain-data'
+import { AdventureAlreadyPlayedError } from '@/lib/archive-store'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
-    if (typeof body.tokenId !== 'string' || !/^\d+$/.test(body.tokenId)) return NextResponse.json({ error: 'A numeric token ID is required.' }, { status: 400 })
-    if (!body.demoMode) {
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Request body must be valid JSON.' }, { status: 400 })
+    }
+    if (typeof body !== 'object' || body === null || !('tokenId' in body) || typeof body.tokenId !== 'string' || !/^\d{1,78}$/.test(body.tokenId)) {
+      return NextResponse.json({ error: 'A numeric token ID is required.' }, { status: 400 })
+    }
+    let demoMode = false
+    if ('demoMode' in body) {
+      if (typeof body.demoMode !== 'boolean') {
+        return NextResponse.json({ error: 'demoMode must be a boolean.' }, { status: 400 })
+      }
+      demoMode = body.demoMode
+    }
+    const tokenId = normalizeChogTokenId(body.tokenId)
+    if (!demoMode) {
       const wallet = await getVerifiedWallet(request)
       if (!wallet) return NextResponse.json({ error: 'Sign in to play this Chog.' }, { status: 401 })
-      const owner = await chainClient.readContract({ address: contractAddress, abi: ownerAbi, functionName: 'ownerOf', args: [BigInt(body.tokenId)] })
+      const owner = (await getCurrentChogOwner(tokenId)).toLowerCase()
       if (owner.toLowerCase() !== wallet) return NextResponse.json({ error: 'Only the current keeper can play this chapter.' }, { status: 403 })
     }
-    return NextResponse.json(await startAdventure(body.tokenId, Boolean(body.demoMode)))
+    return NextResponse.json(await startAdventure(tokenId, demoMode))
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Adventure unavailable'
-    const status = message.includes('not found') ? 404 : message.includes('already played') ? 409 : 503
-    const safeMessage = status === 503 ? 'This chapter is taking a little longer to wake up. Please try again.' : message
-    return NextResponse.json({ error: safeMessage }, { status })
+    if (error instanceof ChogNotFoundError) return NextResponse.json({ error: error.message }, { status: 404 })
+    if (error instanceof AdventureAlreadyPlayedError) return NextResponse.json({ error: error.message }, { status: 409 })
+    if (error instanceof ChogDataError) return NextResponse.json({ error: error.message }, { status: 503 })
+    console.error('Could not start Chog adventure.', error)
+    return NextResponse.json({ error: 'This chapter could not be started. Please try again.' }, { status: 503 })
   }
 }

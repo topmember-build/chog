@@ -42,7 +42,7 @@ export default async function ChogPage({ params }: { params: Promise<{ tokenId: 
   return (
     <main className="site-shell route-shell">
       <header className="route-header">
-        <Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG WORLD ORDER</span></Link>
+        <Link href="/" className="wordmark"><span className="wordmark-mark">C</span><span>CHOG CHRONICLES</span></Link>
         <Link href="/about" className="route-about-link">About the project</Link>
         <span className="mono">FILE No. {chog.tokenId}</span>
         <WalletSignIn />
